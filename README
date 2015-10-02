@@ -1,0 +1,11 @@
+VSP Manager Interface library
+=====
+The library, VSP Manager Interface, provides the VSP Manager's
+interface for application of user space.
+
+Dependencies:
+-------------
+
+ * vspm_drv 
+ * vspmif_drv
+
