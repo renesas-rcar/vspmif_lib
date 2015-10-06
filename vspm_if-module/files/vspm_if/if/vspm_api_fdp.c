@@ -649,13 +649,24 @@ int drv_FDPM_Status(T_FDP_STATUS *fdp_status, int *sub_ercd)
 	struct vspm_status_t status;
 	struct fdp_status_t fdp;
 	long ercd;
+	int rtcd;
 
 	/* check parameter */
-	if (sub_ercd == NULL) {
+	if (fdp_status == NULL) {
 		return -EINVAL;
 	}
 
-	if (fdp_status == NULL) {
+	/* check handle list */
+	if (hdl_list == NULL) {
+		memset(fdp_status, 0, sizeof(T_FDP_STATUS));
+		if (sub_ercd != NULL) {
+			*sub_ercd = 0;
+		}
+		return R_FDPM_OK;
+	}
+
+	/* check parameter */
+	if (sub_ercd == NULL) {
 		return -EINVAL;
 	}
 
@@ -664,14 +675,16 @@ int drv_FDPM_Status(T_FDP_STATUS *fdp_status, int *sub_ercd)
 	/* get handle */
 	hdl = vspm_if_get_handle(*sub_ercd);
 	if (hdl == NULL) {
-		return -EACCES;
+		rtcd = -EACCES;
+		goto err_exit;
 	}
 
 	/* get status */
 	status.fdp = &fdp;
 	ercd = vspm_get_status(hdl->handle, &status);
 	if (ercd != R_VSPM_OK) {
-		return R_FDPM_NG;
+		rtcd = R_FDPM_NG;
+		goto err_exit;
 	}
 
 	pthread_mutex_unlock(&fdp_hdl_mutex);
@@ -691,4 +704,8 @@ int drv_FDPM_Status(T_FDP_STATUS *fdp_status, int *sub_ercd)
 	fdp_status->out_req = FDP_OUT_REQ;
 
 	return R_FDPM_OK;
+
+err_exit:
+	pthread_mutex_unlock(&fdp_hdl_mutex);
+	return rtcd;
 }

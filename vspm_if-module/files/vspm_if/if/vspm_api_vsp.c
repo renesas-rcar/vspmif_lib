@@ -132,6 +132,7 @@ static void vspm_if_expand_vsp_lut_tbl(
 	for (i = 0; i < num; i++) {
 		*dst++ = src_addr;
 		*dst++ = *src_data++;
+		src_addr += 4;
 	}
 }
 
