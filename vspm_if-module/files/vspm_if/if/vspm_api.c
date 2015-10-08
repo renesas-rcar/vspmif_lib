@@ -14,7 +14,7 @@
 #include <pthread.h>
 
 #include "vspm_public.h"
-#include "vspm_if.h"
+#include "vspm_api_local.h"
 
 #define APRINT(fmt, args...)		\
 	fprintf(stderr, FUNCNAME ": " fmt, ##args)
