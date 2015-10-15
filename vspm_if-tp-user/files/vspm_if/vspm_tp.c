@@ -7,6 +7,7 @@
 #include <linux/fb.h>
 #include <linux/ioctl.h>
 #include <sys/mman.h>
+#include <pthread.h>
 
 #include "vspm_public.h"
 #include "mmngr_user_public.h"
@@ -25,6 +26,8 @@ unsigned int dl_hard;
 void* dl_virt;
 MMNGR_ID dl_fd;
 
+static pthread_mutex_t g_mut = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_cond = PTHREAD_COND_INITIALIZER;
 volatile unsigned char end_flag = 0;
 
 static int open_fb(void);
@@ -37,7 +40,10 @@ static int release_memory(void);
 static void cb_func(
 	unsigned long job_id, long result, unsigned long user_data)
 {
+	pthread_mutex_lock(&g_mut);
 	end_flag = 1;
+	pthread_cond_signal(&g_cond);
+	pthread_mutex_unlock(&g_mut);
 }
 
 /* main function */
@@ -246,9 +252,10 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	while(1) {
-		if (end_flag)	break;
-	}
+	pthread_mutex_lock(&g_mut);
+	if (!end_flag)
+		pthread_cond_wait(&g_cond, &g_mut);
+	pthread_mutex_unlock(&g_mut);
 
 #if (FB_ENABLE==1)
 	/* output frame buffer */
