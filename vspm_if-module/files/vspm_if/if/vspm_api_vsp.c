@@ -59,7 +59,6 @@ struct vspm_if_vsp_par_t {
 			void *old_addr;
 		} hgt;
 	} ctrl;
-	struct vsp_dl_t dl_par;
 };
 
 struct vspm_if_vsp_cb_t {
