@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015 Renesas Electronics Corporation
+ * Copyright (c) 2015-2016 Renesas Electronics Corporation
  * Released under the MIT license
  * http://opensource.org/licenses/mit-license.php 
  */
@@ -84,6 +84,7 @@ enum {
 	FDP_YUV422_YUY2,
 	FDP_YUV422_UYVY,
 };
+#define FDP_YUV420_YU12			FDP_YUV420_YV12
 
 /* Sequence mode parameter */
 enum {
