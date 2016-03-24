@@ -1,5 +1,5 @@
 all:
-	${CC} vspm_tp.c \
+	${CC} vspm_tp_lossy.c \
 	-I$(BUILDDIR)/include \
 	-L$(LIBSHARED) \
 	-lvspm -lmmngr -lpthread \
