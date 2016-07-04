@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015 Renesas Electronics Corporation
+ * Copyright (c) 2015-2016 Renesas Electronics Corporation
  * Released under the MIT license
  * http://opensource.org/licenses/mit-license.php 
  */
@@ -17,7 +17,7 @@ typedef void (*FDPM_CBFUNC1)(T_FDP_CB1 *);
 typedef void (*FDPM_CBFUNC2)(T_FDP_CB2 *);
 
 struct vspm_if_fdp_handle_t {
-	unsigned long handle;
+	void *handle;
 	MMNGR_ID stlmsk_fd;
 	pthread_mutex_t mutex;
 	struct vspm_if_fdp_cb_t *cb_list;
@@ -205,9 +205,14 @@ static void vspm_if_set_fdp_pic_param(
 static void vspm_if_set_fdp_img_param(
 	struct fdp_imgbuf_t *img_par, T_FDP_IMGBUF *old_img_par)
 {
-	img_par->addr = old_img_par->addr;
-	img_par->addr_c0 = old_img_par->addr_c0;
-	img_par->addr_c1 = old_img_par->addr_c1;
+	unsigned long tmp;
+
+	tmp = (unsigned long)old_img_par->addr;
+	img_par->addr = (unsigned int)(tmp & 0xffffffff);
+	tmp = (unsigned long)old_img_par->addr_c0;
+	img_par->addr_c0 = (unsigned int)(tmp & 0xffffffff);
+	tmp = (unsigned long)old_img_par->addr_c1;
+	img_par->addr_c1 = (unsigned int)(tmp & 0xffffffff);
 	img_par->stride = old_img_par->stride;
 	img_par->stride_c = old_img_par->stride_c;
 }
@@ -387,8 +392,8 @@ int drv_FDPM_Open(
 		return -ENOMEM;
 	}
 
-	fdp_par.hard_addr[0] = (void *)(unsigned long)(stlmsk_hard);
-	fdp_par.hard_addr[1] = (void *)(unsigned long)(stlmsk_hard + stlmsk_size);
+	fdp_par.hard_addr[0] = stlmsk_hard;
+	fdp_par.hard_addr[1] = stlmsk_hard + stlmsk_size;
 
 	init_par.type = VSPM_TYPE_FDP_AUTO;
 	init_par.par.fdp = &fdp_par;
@@ -474,7 +479,7 @@ int drv_FDPM_Close(
 
 
 static void vspm_if_fdp_cb_func(
-	unsigned long job_id, long result, unsigned long user_data)
+	unsigned long job_id, long result, void *user_data)
 {
 	struct vspm_if_fdp_cb_t *cb_info =
 		(struct vspm_if_fdp_cb_t *)user_data;
@@ -565,7 +570,7 @@ int drv_FDPM_Start(
 		&cb_info->job_id,
 		120,
 		&cb_info->fdp_par.job_par,
-		(unsigned long)cb_info,
+		(void *)cb_info,
 		vspm_if_fdp_cb_func);
 
 

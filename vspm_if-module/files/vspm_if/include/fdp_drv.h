@@ -126,9 +126,9 @@ struct fdp_pic_t {
 
 /* Picture image buffer information structure */
 struct fdp_imgbuf_t {
-	void *addr;
-	void *addr_c0;
-	void *addr_c1;
+	unsigned int addr;
+	unsigned int addr_c0;
+	unsigned int addr_c1;
 	unsigned short stride;
 	unsigned short stride_c;
 };

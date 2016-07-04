@@ -67,14 +67,14 @@ enum {
 
 /* callback function */
 typedef void (*PFN_VSPM_COMPLETE_CALLBACK)(
-	unsigned long job_id, long result, unsigned long user_data);
+	unsigned long job_id, long result, void *user_data);
 
 struct vspm_init_vsp_t {
 	/* reserved */
 };
 
 struct vspm_init_fdp_t {
-	void *hard_addr[2];
+	unsigned int hard_addr[2];
 };
 
 /* initialize parameter structure */
@@ -109,38 +109,38 @@ struct fcp_info_t {
 	unsigned short pos_y;
 	unsigned short pos_c;
 	unsigned short stride_div16;
-	void *ba_anc_prev_y;
-	void *ba_anc_cur_y;
-	void *ba_anc_next_y;
-	void *ba_anc_cur_c;
-	void *ba_ref_prev_y;
-	void *ba_ref_cur_y;
-	void *ba_ref_next_y;
-	void *ba_ref_cur_c;
+	unsigned int ba_anc_prev_y;
+	unsigned int ba_anc_cur_y;
+	unsigned int ba_anc_next_y;
+	unsigned int ba_anc_cur_c;
+	unsigned int ba_ref_prev_y;
+	unsigned int ba_ref_cur_y;
+	unsigned int ba_ref_next_y;
+	unsigned int ba_ref_cur_c;
 };
 
 /* VSP Manager APIs */
 long vspm_init_driver(
-	unsigned long *handle,
+	void **handle,
 	struct vspm_init_t *param);
 
 long vspm_quit_driver(
-	unsigned long handle);
+	void *handle);
 
 long vspm_entry_job(
-	unsigned long handle,
+	void *handle,
 	unsigned long *job_id,
 	char job_priority,
 	struct vspm_job_t *ip_param,
-	unsigned long user_data,
+	void *user_data,
 	PFN_VSPM_COMPLETE_CALLBACK cb_func);
 
 long vspm_cancel_job(
-	unsigned long handle,
+	void *handle,
 	unsigned long job_id);
 
 long vspm_get_status(
-	unsigned long handle,
+	void *handle,
 	struct vspm_status_t *status);
 
 /* R-Car H2/M2 compatible defines */
@@ -201,7 +201,7 @@ long VSPM_lib_Entry(
 	char bJobPriority,
 	VSPM_IP_PAR *ptIpParam,
 	unsigned long uwUserData,
-	PFN_VSPM_COMPLETE_CALLBACK pfnNotifyComplete);
+	void *pfnNotifyComplete);
 
 long VSPM_lib_Cancel(
 	unsigned long handle,

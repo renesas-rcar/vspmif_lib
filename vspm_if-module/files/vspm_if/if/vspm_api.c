@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015 Renesas Electronics Corporation
+ * Copyright (c) 2015-2016 Renesas Electronics Corporation
  * Released under the MIT license
  * http://opensource.org/licenses/mit-license.php 
  */
@@ -53,7 +53,7 @@ static int vspm_cb_thread(struct vspm_handle *hdl)
 }
 
 /* Initialize the VSP manager */
-long vspm_init_driver(unsigned long *handle, struct vspm_init_t *param)
+long vspm_init_driver(void **handle, struct vspm_init_t *param)
 {
 	struct vspm_handle *hdl = 0;
 	int policy;
@@ -144,7 +144,7 @@ long vspm_init_driver(unsigned long *handle, struct vspm_init_t *param)
 		goto err_exit4;
 	}
 
-	*handle = (unsigned long)hdl;
+	*handle = (void *)hdl;
 
 	return R_VSPM_OK;
 
@@ -162,7 +162,7 @@ err_exit1:
 }
 
 /* Finalize the VSP manager */
-long vspm_quit_driver(unsigned long handle)
+long vspm_quit_driver(void *handle)
 {
 	struct vspm_handle *hdl = (struct vspm_handle *)handle;
 
@@ -205,11 +205,11 @@ long vspm_quit_driver(unsigned long handle)
 
 /* Entry the job */
 long vspm_entry_job(
-	unsigned long handle,
+	void *handle,
 	unsigned long *job_id,
 	char job_priority,
 	struct vspm_job_t *ip_param,
-	unsigned long user_data,
+	void *user_data,
 	PFN_VSPM_COMPLETE_CALLBACK cb_func)
 {
 	struct vspm_handle *hdl = (struct vspm_handle *)handle;
@@ -242,7 +242,7 @@ long vspm_entry_job(
 }
 
 /* Cancel the job */
-long vspm_cancel_job(unsigned long handle, unsigned long job_id)
+long vspm_cancel_job(void *handle, unsigned long job_id)
 {
 	struct vspm_handle *hdl = (struct vspm_handle *)handle;
 	long rtcd = R_VSPM_OK;
@@ -272,7 +272,7 @@ long vspm_cancel_job(unsigned long handle, unsigned long job_id)
 }
 
 /* Get a status */
-long vspm_get_status(unsigned long handle, struct vspm_status_t *status)
+long vspm_get_status(void *handle, struct vspm_status_t *status)
 {
 	struct vspm_handle *hdl = (struct vspm_handle *)handle;
 	long rtcd = R_VSPM_OK;

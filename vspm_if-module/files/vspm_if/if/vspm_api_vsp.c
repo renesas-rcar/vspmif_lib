@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015 Renesas Electronics Corporation
+ * Copyright (c) 2015-2016 Renesas Electronics Corporation
  * Released under the MIT license
  * http://opensource.org/licenses/mit-license.php 
  */
@@ -13,7 +13,7 @@
 #include "mmngr_user_public.h"
 
 struct vspm_if_vsp_handle_t {
-	unsigned long handle;
+	void *handle;
 	pthread_mutex_t mutex;
 	struct vspm_if_vsp_cb_t *cb_list;
 };
@@ -65,7 +65,8 @@ struct vspm_if_vsp_cb_t {
 	struct vspm_if_vsp_handle_t *parent_hdl;
 	struct vspm_if_vsp_par_t vsp_par;
 	unsigned long user_data;
-	PFN_VSPM_COMPLETE_CALLBACK cb_func;
+	void (*cb_func)
+		(unsigned long job_id, long result, unsigned long user_data);
 	struct vspm_if_vsp_cb_t *next;
 };
 
@@ -161,9 +162,14 @@ static void vspm_if_set_vsp_src_param(
 	unsigned short tbl_num;
 	unsigned int *data = NULL;
 
-	src_par->addr = old_src_par->addr;
-	src_par->addr_c0 = old_src_par->addr_c0;
-	src_par->addr_c1 = old_src_par->addr_c1;
+	unsigned long tmp;
+
+	tmp = (unsigned long)old_src_par->addr;
+	src_par->addr = (unsigned int)(tmp & 0xffffffff);
+	tmp = (unsigned long)old_src_par->addr_c0;
+	src_par->addr_c0 = (unsigned int)(tmp & 0xffffffff);
+	tmp = (unsigned long)old_src_par->addr_c1;
+	src_par->addr_c1 = (unsigned int)(tmp & 0xffffffff);
 	src_par->stride = old_src_par->stride;
 	src_par->stride_c = old_src_par->stride_c;
 	src_par->width = old_src_par->width;
@@ -202,7 +208,7 @@ static void vspm_if_set_vsp_src_param(
 			}
 		}
 
-		par->clut.hard_addr = NULL;
+		par->clut.hard_addr = 0;
 		par->clut.virt_addr = (void *)data;
 		par->clut.tbl_num = (unsigned short)old_src_par->osd_lut->size;
 
@@ -212,7 +218,8 @@ static void vspm_if_set_vsp_src_param(
 	}
 
 	if (old_src_par->alpha_blend != NULL) {
-		par->alpha.addr_a = old_src_par->alpha_blend->addr_a;
+		tmp = (unsigned long)old_src_par->alpha_blend->addr_a;
+		par->alpha.addr_a = (unsigned int)(tmp & 0xffffffff);
 		par->alpha.stride_a = old_src_par->alpha_blend->astride;
 		par->alpha.swap = old_src_par->alpha_blend->aswap;
 		par->alpha.asel = old_src_par->alpha_blend->asel;
@@ -265,9 +272,14 @@ static void vspm_if_set_vsp_src_param(
 static void vspm_if_set_vsp_dst_param(
 	struct vsp_dst_t *dst, T_VSP_OUT *old_dst)
 {
-	dst->addr = old_dst->addr;
-	dst->addr_c0 = old_dst->addr_c0;
-	dst->addr_c1 = old_dst->addr_c1;
+	unsigned long tmp;
+
+	tmp = (unsigned long)old_dst->addr;
+	dst->addr = (unsigned int)(tmp & 0xffffffff);
+	tmp = (unsigned long)old_dst->addr_c0;
+	dst->addr_c0 = (unsigned int)(tmp & 0xffffffff);;
+	tmp = (unsigned long)old_dst->addr_c1;
+	dst->addr_c1 = (unsigned int)(tmp & 0xffffffff);;
 	dst->stride = old_dst->stride;
 	dst->stride_c = old_dst->stride_c;
 	dst->width = old_dst->width;
@@ -353,7 +365,7 @@ static void vspm_if_set_vsp_lut_param(
 		}
 	}
 
-	lut->lut.hard_addr = (void *)(unsigned long)hard_addr;
+	lut->lut.hard_addr = hard_addr;
 	lut->lut.virt_addr = NULL;
 	lut->lut.tbl_num = (unsigned short)old_lut->size;
 	lut->fxa = old_lut->fxa;
@@ -412,7 +424,7 @@ static void vspm_if_set_vsp_clu_param(
 	}
 
 	clu->mode = old_clu->mode;
-	clu->clu.hard_addr = (void *)(unsigned long)hard_addr;
+	clu->clu.hard_addr = hard_addr;
 	clu->clu.virt_addr = NULL;
 	clu->clu.tbl_num = (unsigned short)old_clu->size;
 	clu->fxa = old_clu->fxa;
@@ -539,7 +551,7 @@ static void vspm_if_set_vsp_hgo_param(
 	unsigned long *addr;
 
 	addr = malloc(1088);
-	hgo->hard_addr = NULL;
+	hgo->hard_addr = 0;
 	hgo->virt_addr = (void *)addr;
 	hgo->width = old_hgo->width;
 	hgo->height = old_hgo->height;
@@ -564,7 +576,7 @@ static void vspm_if_set_vsp_hgt_param(
 	int i;
 
 	addr = malloc(800);
-	hgt->hard_addr = NULL;
+	hgt->hard_addr = 0;
 	hgt->virt_addr = (void *)addr;
 	hgt->width = old_hgt->width;
 	hgt->height = old_hgt->height;
@@ -673,7 +685,7 @@ static void vspm_if_set_vsp_param(
 		st_par->ctrl_par = &vsp_par->ctrl.ctrl;
 	}
 
-	st_par->dl_par.hard_addr = NULL;
+	st_par->dl_par.hard_addr = 0;
 	st_par->dl_par.virt_addr = NULL;
 	if (vsp_par->dst_par.width == 0) {
 		st_par->dl_par.tbl_num = 192;
@@ -722,12 +734,12 @@ static void vspm_if_release_memory(struct vspm_if_vsp_cb_t *cb_info)
 	}
 
 	/* LUT */
-	if (ctrl_par->lut.lut.lut.hard_addr != NULL) {
+	if (ctrl_par->lut.lut.lut.hard_addr != 0) {
 		(void)mmngr_free_in_user_ext(ctrl_par->lut.fd);
 	}
 
 	/* CLU */
-	if (ctrl_par->clu.clu.clu.hard_addr != NULL) {
+	if (ctrl_par->clu.clu.clu.hard_addr != 0) {
 		(void)mmngr_free_in_user_ext(ctrl_par->clu.fd);
 	}
 
@@ -823,7 +835,7 @@ long VSPM_lib_DriverQuit(unsigned long handle)
 
 
 static void vspm_if_vsp_cb_func(
-	unsigned long job_id, long result, unsigned long user_data)
+	unsigned long job_id, long result, void *user_data)
 {
 	struct vspm_if_vsp_cb_t *cb_info =
 		(struct vspm_if_vsp_cb_t *)user_data;
@@ -860,7 +872,7 @@ long VSPM_lib_Entry(
 	char bJobPriority,
 	VSPM_IP_PAR *ptIpParam,
 	unsigned long uwUserData,
-	PFN_VSPM_COMPLETE_CALLBACK pfnNotifyComplete)
+	void *pfnNotifyComplete)
 {
 	struct vspm_if_vsp_handle_t *hdl =
 		(struct vspm_if_vsp_handle_t *)handle;
@@ -904,7 +916,7 @@ long VSPM_lib_Entry(
 		puwJobId,
 		bJobPriority,
 		&cb_info->vsp_par.job_par,
-		(unsigned long)cb_info,
+		(void *)cb_info,
 		vspm_if_vsp_cb_func);
 	if (ercd != R_VSPM_OK) {
 		(void)vspm_if_del_vsp_cb_info(cb_info);

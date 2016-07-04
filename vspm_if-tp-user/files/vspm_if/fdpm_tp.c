@@ -13,7 +13,7 @@
 sem_t start_sem;
 
 static void cb_func(
-	unsigned long uwJobId, long wResult, unsigned long uwUserData)
+	unsigned long uwJobId, long wResult, void *uwUserData)
 {
 	int *tmp, *tmp2;
 	int default_null = 0xAA;
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	struct vspm_job_t vspm_ip;
 	struct vspm_init_fdp_t init_fdp;
 
-	unsigned long handle;
+	void *handle;
 	unsigned long jobid;
 
 	MMNGR_ID mmngr_fd;
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	int input_hsize, input_vsize;
 	int out_maxsize;
 	int mmngr_size, input_area_size;
-	unsigned long *pRef[NUM_FRAME][NUM_PLANE], *pOut[NUM_FRAME][NUM_PLANE];
+	unsigned int RefHw[NUM_FRAME][NUM_PLANE], OutHw[NUM_FRAME][NUM_PLANE];
 	unsigned long *pRefCpu[NUM_FRAME][NUM_PLANE], *pOutCpu[NUM_FRAME][NUM_PLANE];
 	unsigned char *dump_pt;
 	int curr_frame;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
 	for(y=0; y<NUM_FRAME; y++) {
 		for(x=0; x<3; x++) {
-			pRef   [y][x] = (unsigned long *)(unsigned long)(mmngr_hw  + (3*y + x)* in_fsize);
+			RefHw  [y][x] = mmngr_hw  + (unsigned int)((3*y + x)* in_fsize);
 			pRefCpu[y][x] = (unsigned long *)(mmngr_cpu + (3*y + x)* in_fsize);
 		}
 	}
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
 	for(y=0; y<NUM_FRAME; y++) {
 		for(x=0; x<3; x++) {
-			pOut   [y][x] = (unsigned long *)(unsigned long)(mmngr_hw  + input_area_size + (3*y + x)* out_maxsize);
+			OutHw  [y][x] = mmngr_hw  + (unsigned int)(input_area_size + (3*y + x)* out_maxsize);
 			pOutCpu[y][x] = (unsigned long *)(mmngr_cpu + input_area_size + (3*y + x)* out_maxsize);
 		}
 	}
@@ -130,8 +130,8 @@ int main(int argc, char *argv[])
 
 	sem_init(&start_sem, 0, 0);
 
-	init_fdp.hard_addr[0] = (void*)(unsigned long)(stlmsk_hw);
-	init_fdp.hard_addr[1] = (void*)(unsigned long)(stlmsk_hw + (2*((input_hsize+7)/8)*input_vsize));
+	init_fdp.hard_addr[0] = stlmsk_hw;
+	init_fdp.hard_addr[1] = stlmsk_hw + (2*((input_hsize+7)/8)*input_vsize);
 
 	init_par.use_ch = VSPM_EMPTY_CH;
 	init_par.mode = VSPM_MODE_MUTUAL;
@@ -214,15 +214,15 @@ int main(int argc, char *argv[])
 	/* frame loop */
 	for (curr_frame = 0; curr_frame<NUM_FRAME; curr_frame++) {
 		/* setting input/output buffer address */
-		str_refimgbuf[0].addr    = pRef[(curr_frame+1) % NUM_FRAME][0];
-		str_refimgbuf[1].addr    = pRef[(curr_frame  ) % NUM_FRAME][0];
-		str_refimgbuf[1].addr_c0 = pRef[(curr_frame  ) % NUM_FRAME][1];
-		str_refimgbuf[1].addr_c1 = pRef[(curr_frame  ) % NUM_FRAME][2];
-		str_refimgbuf[2].addr    = pRef[(curr_frame+NUM_FRAME-1) % NUM_FRAME][0];
+		str_refimgbuf[0].addr    = RefHw[(curr_frame+1) % NUM_FRAME][0];
+		str_refimgbuf[1].addr    = RefHw[(curr_frame  ) % NUM_FRAME][0];
+		str_refimgbuf[1].addr_c0 = RefHw[(curr_frame  ) % NUM_FRAME][1];
+		str_refimgbuf[1].addr_c1 = RefHw[(curr_frame  ) % NUM_FRAME][2];
+		str_refimgbuf[2].addr    = RefHw[(curr_frame+NUM_FRAME-1) % NUM_FRAME][0];
 		if(para_test_start->fproc_par->out_buf != NULL) {
-			str_outimgbuf.addr     = pOut[curr_frame % NUM_FRAME][0];
-			str_outimgbuf.addr_c0  = pOut[curr_frame % NUM_FRAME][1];
-			str_outimgbuf.addr_c1  = pOut[curr_frame % NUM_FRAME][2];
+			str_outimgbuf.addr     = OutHw[curr_frame % NUM_FRAME][0];
+			str_outimgbuf.addr_c0  = OutHw[curr_frame % NUM_FRAME][1];
+			str_outimgbuf.addr_c1  = OutHw[curr_frame % NUM_FRAME][2];
 		}
 
 		/* set NULL to seq_par for same sequence */
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 		vspm_ip.type = VSPM_TYPE_FDP_AUTO;
 		vspm_ip.par.fdp = para_test_start;
 
-		rt_code = vspm_entry_job(handle, &jobid, 126, &vspm_ip, (unsigned long)&callback2_arg, cb_func);
+		rt_code = vspm_entry_job(handle, &jobid, 126, &vspm_ip, (void *)&callback2_arg, cb_func);
 		if (rt_code)
 			printf("vspm_entry_job() Failed!! ercd=%d\n", rt_code);
 

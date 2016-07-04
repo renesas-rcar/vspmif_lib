@@ -39,7 +39,7 @@ struct vspm_tp_private_t {
 	unsigned int dl_hard;
 	MMNGR_ID dl_fd;
 
-	unsigned long handle;
+	void *handle;
 };
 
 struct vspm_tp_cb_info_t {
@@ -307,7 +307,7 @@ static void output_fb(struct vspm_tp_private_t *priv)
 
 /* callback function */
 static void cb_func(
-	unsigned long job_id, long result, unsigned long user_data)
+	unsigned long job_id, long result, void *user_data)
 {
 	struct vspm_tp_cb_info_t *cb_info =
 		(struct vspm_tp_cb_info_t *)user_data;
@@ -354,7 +354,7 @@ int vsp_image_test(struct vspm_tp_private_t *priv, int lossy)
 	pthread_cond_init(&cb_info->cond, NULL);
 
 	/* set alpha of source */
-	alpha_par.addr_a	= NULL;
+	alpha_par.addr_a	= 0;
 	alpha_par.stride_a	= 0;
 	alpha_par.swap		= VSP_SWAP_NO;
 	alpha_par.asel		= VSP_ALPHA_NUM5;
@@ -367,9 +367,9 @@ int vsp_image_test(struct vspm_tp_private_t *priv, int lossy)
 	alpha_par.mult		= NULL;
 
 	/* set source */
-	src_par.addr		= (void *)(unsigned long)(priv->in_hard);
-	src_par.addr_c0		= NULL;
-	src_par.addr_c1		= NULL;
+	src_par.addr		= priv->in_hard;
+	src_par.addr_c0		= 0;
+	src_par.addr_c1		= 0;
 	src_par.stride 		= 960 * 4;
 	src_par.stride_c	= 0;
 	src_par.width		= 960;
@@ -403,25 +403,25 @@ int vsp_image_test(struct vspm_tp_private_t *priv, int lossy)
 	}
 
 #if (LOSSY_FORMAT == 1)
-	dst_par.addr		= (void*)(unsigned long)(priv->mid_hard[lossy]);
-	dst_par.addr_c0		= (void*)(unsigned long)(priv->mid_hard[lossy]+ 1024*960);
-	dst_par.addr_c1		= (void*)(unsigned long)(priv->mid_hard[lossy]+ 1024*960 + 1024*960);
+	dst_par.addr		= priv->mid_hard[lossy];
+	dst_par.addr_c0		= priv->mid_hard[lossy]+ 1024*960;
+	dst_par.addr_c1		= priv->mid_hard[lossy]+ 1024*960 + 1024*960;
 	dst_par.stride		= 1024;
 	dst_par.stride_c	= 1024;
 	dst_par.format		= VSP_OUT_YUV444_PLANAR;
 	dst_par.csc			= VSP_CSC_ON;
 #elif (LOSSY_FORMAT == 2)
-	dst_par.addr		= (void*)(unsigned long)(priv->mid_hard[lossy]);
-	dst_par.addr_c0		= NULL;
-	dst_par.addr_c1		= NULL;
+	dst_par.addr		= priv->mid_hard[lossy];
+	dst_par.addr_c0		= 0;
+	dst_par.addr_c1		= 0;
 	dst_par.stride		= 1024 * 2;
 	dst_par.stride_c	= 0;
 	dst_par.format		= VSP_OUT_YUV422_INT0_YUY2;
 	dst_par.csc			= VSP_CSC_ON;
 #else	/* LOSSY_FORMAT == 3 */
-	dst_par.addr		= (void*)(unsigned long)(priv->mid_hard[lossy]);
-	dst_par.addr_c0		= NULL;
-	dst_par.addr_c1		= NULL;
+	dst_par.addr		= priv->mid_hard[lossy];
+	dst_par.addr_c0		= 0;
+	dst_par.addr_c1		= 0;
 	dst_par.stride		= 1024 * 4;
 	dst_par.stride_c	= 0;
 	dst_par.format		= VSP_OUT_PRGB8888;
@@ -463,7 +463,7 @@ int vsp_image_test(struct vspm_tp_private_t *priv, int lossy)
 	vsp_par.src_par[4]	= NULL;
 	vsp_par.dst_par		= &dst_par;
 	vsp_par.ctrl_par	= &ctrl_par;
-	vsp_par.dl_par.hard_addr = (void *)(unsigned long)priv->dl_hard;
+	vsp_par.dl_par.hard_addr = priv->dl_hard;
 	vsp_par.dl_par.virt_addr = priv->dl_virt;
 	vsp_par.dl_par.tbl_num	 = 192+64*4;
 
@@ -473,7 +473,7 @@ int vsp_image_test(struct vspm_tp_private_t *priv, int lossy)
 	vspm_ip.par.vsp = &vsp_par;
 
 	/* entry */
-	ercd = vspm_entry_job(priv->handle, &job_id, 126, &vspm_ip, (unsigned long)cb_info, cb_func); 
+	ercd = vspm_entry_job(priv->handle, &job_id, 126, &vspm_ip, (void *)cb_info, cb_func); 
 	if (ercd != R_VSPM_OK) {
 		printf("Error: failed to vspm_entry_job() ercd=%d\n", ercd);
 		pthread_mutex_destroy(&cb_info->mutex);
@@ -536,7 +536,7 @@ int vsp_blend_test(struct vspm_tp_private_t *priv)
 	memset(&vsp_par, 0, sizeof(struct vsp_start_t));
 
 	/* set alpha of source */
-	alpha_par.addr_a	= NULL;
+	alpha_par.addr_a	= 0;
 	alpha_par.stride_a	= 0;
 	alpha_par.swap		= VSP_SWAP_NO;
 	alpha_par.asel		= VSP_ALPHA_NUM5;
@@ -551,25 +551,25 @@ int vsp_blend_test(struct vspm_tp_private_t *priv)
 	/* set source */
 	if (priv->mid_fd[0] != 0) {
 #if (LOSSY_FORMAT == 1)
-		src_par[num].addr		= (void *)(unsigned long)(priv->mid_hard[0]);
-		src_par[num].addr_c0	= (void *)(unsigned long)(priv->mid_hard[0] + 1024*960);
-		src_par[num].addr_c1	= (void *)(unsigned long)(priv->mid_hard[0] + 1024*960 + 1024*960);
+		src_par[num].addr		= priv->mid_hard[0];
+		src_par[num].addr_c0	= priv->mid_hard[0] + 1024*960;
+		src_par[num].addr_c1	= priv->mid_hard[0] + 1024*960 + 1024*960;
 		src_par[num].stride 	= 1024;
 		src_par[num].stride_c	= 1024;
 		src_par[num].format		= VSP_IN_YUV444_PLANAR;
 		src_par[num].csc		= VSP_CSC_ON;
 #elif (LOSSY_FORMAT == 2)
-		src_par[num].addr		= (void *)(unsigned long)(priv->mid_hard[0]);
-		src_par[num].addr_c0	= NULL;
-		src_par[num].addr_c1	= NULL;
+		src_par[num].addr		= priv->mid_hard[0];
+		src_par[num].addr_c0	= 0;
+		src_par[num].addr_c1	= 0;
 		src_par[num].stride 	= 1024 * 2;
 		src_par[num].stride_c	= 0;
 		src_par[num].format		= VSP_IN_YUV422_INT0_YUY2;
 		src_par[num].csc		= VSP_CSC_ON;
 #else	/* LOSSY_FORMAT == 3 */
-		src_par[num].addr		= (void *)(unsigned long)(priv->mid_hard[0]);
-		src_par[num].addr_c0	= NULL;
-		src_par[num].addr_c1	= NULL;
+		src_par[num].addr		= priv->mid_hard[0];
+		src_par[num].addr_c0	= 0;
+		src_par[num].addr_c1	= 0;
 		src_par[num].stride 	= 1024 * 4;
 		src_par[num].stride_c	= 0;
 		src_par[num].format		= VSP_IN_ARGB8888;
@@ -601,25 +601,25 @@ int vsp_blend_test(struct vspm_tp_private_t *priv)
 
 	if (priv->mid_fd[1] != 0) {
 #if (LOSSY_FORMAT == 1)
-		src_par[num].addr		= (void *)(unsigned long)(priv->mid_hard[1]);
-		src_par[num].addr_c0	= (void *)(unsigned long)(priv->mid_hard[1] + 1024*960);
-		src_par[num].addr_c1	= (void *)(unsigned long)(priv->mid_hard[1] + 1024*960 + 1024*960);
+		src_par[num].addr		= priv->mid_hard[1];
+		src_par[num].addr_c0	= priv->mid_hard[1] + 1024*960;
+		src_par[num].addr_c1	= priv->mid_hard[1] + 1024*960 + 1024*960;
 		src_par[num].stride 	= 1024;
 		src_par[num].stride_c	= 1024;
 		src_par[num].format		= VSP_IN_YUV444_PLANAR;
 		src_par[num].csc		= VSP_CSC_ON;
 #elif (LOSSY_FORMAT == 2)
-		src_par[num].addr		= (void *)(unsigned long)(priv->mid_hard[1]);
-		src_par[num].addr_c0	= NULL;
-		src_par[num].addr_c1	= NULL;
+		src_par[num].addr		= priv->mid_hard[1];
+		src_par[num].addr_c0	= 0;
+		src_par[num].addr_c1	= 0;
 		src_par[num].stride 	= 1024 * 2;
 		src_par[num].stride_c	= 0;
 		src_par[num].format		= VSP_IN_YUV422_INT0_YUY2;
 		src_par[num].csc		= VSP_CSC_ON;
 #else	/* LOSSY_FORMAT == 3 */
-		src_par[num].addr		= (void *)(unsigned long)(priv->mid_hard[1]);
-		src_par[num].addr_c0	= NULL;
-		src_par[num].addr_c1	= NULL;
+		src_par[num].addr		= priv->mid_hard[1];
+		src_par[num].addr_c0	= 0;
+		src_par[num].addr_c1	= 0;
 		src_par[num].stride 	= 1024 * 4;
 		src_par[num].stride_c	= 0;
 		src_par[num].format		= VSP_IN_ARGB8888;
@@ -650,9 +650,9 @@ int vsp_blend_test(struct vspm_tp_private_t *priv)
 	}
 
 	/* set destination */
-	dst_par.addr		= (void*)(unsigned long)(priv->out_hard);
-	dst_par.addr_c0		= NULL;
-	dst_par.addr_c1		= NULL;
+	dst_par.addr		= priv->out_hard;
+	dst_par.addr_c0		= 0;
+	dst_par.addr_c1		= 0;
 	dst_par.stride		= 1920 * 4;
 	dst_par.stride_c	= 0;
 	dst_par.width		= 1920;
@@ -711,7 +711,7 @@ int vsp_blend_test(struct vspm_tp_private_t *priv)
 	vsp_par.use_module	= VSP_BRU_USE;
 	vsp_par.dst_par		= &dst_par;
 	vsp_par.ctrl_par	= &ctrl_par;
-	vsp_par.dl_par.hard_addr = (void *)(unsigned long)priv->dl_hard;
+	vsp_par.dl_par.hard_addr = priv->dl_hard;
 	vsp_par.dl_par.virt_addr = priv->dl_virt;
 	vsp_par.dl_par.tbl_num	 = 192;
 
@@ -721,7 +721,7 @@ int vsp_blend_test(struct vspm_tp_private_t *priv)
 	vspm_ip.par.vsp = &vsp_par;
 
 	/* entry */
-	ercd = vspm_entry_job(priv->handle, &job_id, 126, &vspm_ip, (unsigned long)cb_info, cb_func); 
+	ercd = vspm_entry_job(priv->handle, &job_id, 126, &vspm_ip, (void *)cb_info, cb_func); 
 	if (ercd != R_VSPM_OK) {
 		printf("Error: failed to vspm_entry_job() ercd=%d\n", ercd);
 		pthread_mutex_destroy(&cb_info->mutex);
