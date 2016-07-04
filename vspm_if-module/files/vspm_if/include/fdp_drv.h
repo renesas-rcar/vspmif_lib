@@ -140,6 +140,13 @@ struct fdp_refbuf_t {
 	struct fdp_imgbuf_t *prev_buf;
 };
 
+/* De-interlace information structure */
+struct fdp_ipc_t {
+	unsigned char cmb_ofst;
+	unsigned char cmb_max;
+	unsigned char cmb_gard;
+};
+
 /* Processing information structure */
 struct fdp_fproc_t {
 	struct fdp_seq_t *seq_par;
@@ -151,6 +158,7 @@ struct fdp_fproc_t {
 	struct fdp_imgbuf_t *out_buf;
 	struct fdp_refbuf_t *ref_buf;
 	struct fcp_info_t *fcp_par;
+	struct fdp_ipc_t *ipc_par;
 };
 
 /* Start information parameter */

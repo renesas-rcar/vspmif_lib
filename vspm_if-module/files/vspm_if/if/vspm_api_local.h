@@ -355,6 +355,7 @@ struct compat_fdp_fproc_t {
 	unsigned int out_buf;
 	unsigned int ref_buf;
 	unsigned int fcp_par;
+	unsigned int ipc_par;
 };
 
 struct compat_fdp_start_t {

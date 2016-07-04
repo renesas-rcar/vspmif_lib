@@ -275,6 +275,7 @@ static void vspm_if_set_fdp_fproc_param(
 	fproc_par->interpolated_line = 0;
 	fproc_par->out_format = old_fproc_par->out_format;
 	fproc_par->fcp_par = NULL;
+	fproc_par->ipc_par = NULL;
 }
 
 

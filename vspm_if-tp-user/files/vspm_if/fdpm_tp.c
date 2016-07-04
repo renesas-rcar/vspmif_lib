@@ -186,6 +186,7 @@ int main(int argc, char *argv[])
 	para_test_fproc->out_buf = &str_outimgbuf;
 	para_test_fproc->out_format = FDP_YUV420;
 	para_test_fproc->fcp_par = NULL;
+	para_test_fproc->ipc_par = NULL;
 
 	para_test_seq->seq_mode = FDP_SEQ_INTER;
 	para_test_seq->telecine_mode = FDP_TC_OFF;
