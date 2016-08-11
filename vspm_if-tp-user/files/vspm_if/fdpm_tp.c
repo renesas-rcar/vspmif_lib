@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	for(y=0; y<NUM_FRAME; y++) {
 		for(x=0; x<3; x++) {
 			RefHw  [y][x] = mmngr_hw  + (unsigned int)((3*y + x)* in_fsize);
-			pRefCpu[y][x] = (unsigned long *)(mmngr_cpu + (3*y + x)* in_fsize);
+			pRefCpu[y][x] = (unsigned long *)(((unsigned long)mmngr_cpu) + (3*y + x)* in_fsize);
 		}
 	}
 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 	for(y=0; y<NUM_FRAME; y++) {
 		for(x=0; x<3; x++) {
 			OutHw  [y][x] = mmngr_hw  + (unsigned int)(input_area_size + (3*y + x)* out_maxsize);
-			pOutCpu[y][x] = (unsigned long *)(mmngr_cpu + input_area_size + (3*y + x)* out_maxsize);
+			pOutCpu[y][x] = (unsigned long *)(((unsigned long)mmngr_cpu) + input_area_size + (3*y + x)* out_maxsize);
 		}
 	}
 
@@ -144,31 +144,36 @@ int main(int argc, char *argv[])
 	}
 
 	/* make start parameter */
-	if ( (para_test_start = (struct fdp_start_t *)malloc(sizeof(struct fdp_start_t))) == NULL) {
+	para_test_start = (struct fdp_start_t *)malloc(sizeof(struct fdp_start_t));
+	if (para_test_start == NULL) {
 		printf("Fail malloc (para_test_start)\n");
 		goto exit;
 	}
 	memset(para_test_start, 0x0, sizeof(struct fdp_start_t));
 
-	if ( (para_test_fproc = (struct fdp_fproc_t *)malloc(sizeof(struct fdp_fproc_t))) == NULL) {
+	para_test_fproc = (struct fdp_fproc_t *)malloc(sizeof(struct fdp_fproc_t));
+	if (para_test_fproc == NULL) {
 		printf("Fail malloc (para_test_fproc)\n");
 		goto exit;
 	}
 	memset(para_test_fproc, 0x0, sizeof(struct fdp_fproc_t));
 
-	if ( (para_test_seq = (struct fdp_seq_t *)malloc(sizeof(struct fdp_seq_t))) == NULL) {
+	para_test_seq = (struct fdp_seq_t *)malloc(sizeof(struct fdp_seq_t));
+	if (para_test_seq == NULL) {
 		printf("Fail malloc (para_test_seq)\n");
 		goto exit;
 	}
 	memset(para_test_seq, 0x0, sizeof(struct fdp_seq_t));
 
-	if ( (para_test_in_pic = (struct fdp_pic_t *)malloc(sizeof(struct fdp_pic_t))) == NULL) {
+	para_test_in_pic = (struct fdp_pic_t *)malloc(sizeof(struct fdp_pic_t));
+	if (para_test_in_pic == NULL) {
 		printf("Fail malloc (para_test_in_pic)\n");
 		goto exit;
 	}
 	memset(para_test_in_pic, 0x0, sizeof(struct fdp_pic_t));
 
-	if ( (para_test_refbuf = (struct fdp_refbuf_t *)malloc(sizeof(struct fdp_refbuf_t))) == NULL) {
+	para_test_refbuf = (struct fdp_refbuf_t *)malloc(sizeof(struct fdp_refbuf_t));
+	if (para_test_refbuf == NULL) {
 		printf("Fail malloc (poara_test_refbuf)\n");
 		goto exit;
 	}
@@ -250,7 +255,8 @@ int main(int argc, char *argv[])
 
 		/* dump output data */
 		sprintf(out_file_name,"out_data_%03d.yuv",curr_frame);
-		if((fpo = fopen(out_file_name,"w")) == NULL) {
+		fpo = fopen(out_file_name, "w");
+		if (fpo == NULL) {
 			printf("Can not open file:%s\n",out_file_name);
 		} else {
 			for(i=0;i<input_vsize*2;i++){

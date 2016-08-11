@@ -185,8 +185,8 @@ static void draw_string(
 
 	for (clr_idx = 0; clr_idx < 8; clr_idx++) {
 		for (line_idx = 0; line_idx < 16*ratio; line_idx++) {
-			canvas = (unsigned int *)
-				(priv->in_virt + 960*4 * (120*clr_idx + line_idx));
+			canvas = (unsigned int *)priv->in_virt;
+			canvas += 960 * (120 * clr_idx + line_idx);
 			canvas += 960*x + y;
 			for (moji_idx = 0; moji_idx < 10; moji_idx++) {
 				moji = moji_tbl[(line_idx/ratio) * 10 + moji_idx];
