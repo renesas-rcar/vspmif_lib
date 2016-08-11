@@ -382,15 +382,17 @@ static void vspm_if_set_vsp_clu_param(
 	void *virt_addr;
 	int ercd;
 
-	if ((old_clu->clu_addr != NULL) &&
-		(old_clu->clu_data != NULL)) {
-		tbl_num = (unsigned short)old_clu->size;
-		if (tbl_num > 4913) {
-			tbl_num = 4913;
-		}
+	tbl_num = (unsigned short)old_clu->size;
+	if (tbl_num > 4913) {
+		tbl_num = 4913;
+	}
 
-		if ((old_clu->mode == VSP_CLU_MODE_3D) ||
-			(old_clu->mode == VSP_CLU_MODE_2D)) {
+	if ((old_clu->mode == VSP_CLU_MODE_3D) ||
+		(old_clu->mode == VSP_CLU_MODE_2D)) {
+		/* normal mode */
+		if ((old_clu->clu_addr != NULL) &&
+			(old_clu->clu_data != NULL)) {
+
 			ercd = mmngr_alloc_in_user_ext(
 				&par->fd,
 				tbl_num * 16,
@@ -405,7 +407,12 @@ static void vspm_if_set_vsp_clu_param(
 					(unsigned int *)old_clu->clu_data,
 					tbl_num);
 			}
-		} else {
+
+			clu->clu.tbl_num = tbl_num * 2;
+		}
+	} else {
+		/* auto address increment mode */
+		if (old_clu->clu_data != NULL) {
 			ercd = mmngr_alloc_in_user_ext(
 				&par->fd,
 				tbl_num * 8,
@@ -420,13 +427,14 @@ static void vspm_if_set_vsp_clu_param(
 					(unsigned int *)old_clu->clu_data,
 					tbl_num);
 			}
+
+			clu->clu.tbl_num = tbl_num;
 		}
 	}
 
 	clu->mode = old_clu->mode;
 	clu->clu.hard_addr = hard_addr;
 	clu->clu.virt_addr = NULL;
-	clu->clu.tbl_num = (unsigned short)old_clu->size;
 	clu->fxa = old_clu->fxa;
 	clu->connect = old_clu->connect;
 }
