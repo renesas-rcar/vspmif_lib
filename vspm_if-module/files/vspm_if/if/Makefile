@@ -17,8 +17,6 @@ clean:
 	rm -f libvspm.so.1
 install:
 	$(CP) ../include/vspm_public.h $(INCSHARED)
-	$(CP) ../include/vsp_drv.h $(INCSHARED)
-	$(CP) ../include/fdp_drv.h $(INCSHARED)
 ifeq ($(VSPM_LEGACY_IF),1)
 	$(CP) ../include/fdpm_api.h $(INCSHARED)
 endif
