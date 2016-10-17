@@ -1,12 +1,12 @@
 all:
 	${CC} vspm_tp_lossy.c \
-	-I$(BUILDDIR)/include \
+	-I$(INCSHARED) \
 	-L$(LIBSHARED) \
 	-lvspm -lmmngr -lpthread \
 	-o vspm_tp
 
 	${CC} fdpm_tp.c \
-	-I$(BUILDDIR)/include \
+	-I$(INCSHARED) \
 	-L$(LIBSHARED) \
 	-lvspm -lmmngr -lpthread \
 	-o fdpm_tp
