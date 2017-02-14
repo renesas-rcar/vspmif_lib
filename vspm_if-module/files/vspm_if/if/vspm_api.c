@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015-2016 Renesas Electronics Corporation
+ * Copyright (c) 2015-2017 Renesas Electronics Corporation
  * Released under the MIT license
  * http://opensource.org/licenses/mit-license.php 
  */
@@ -35,10 +35,8 @@ static int vspm_cb_thread(struct vspm_handle *hdl)
 	struct vspm_if_cb_rsp_t cb_info;
 
 	while (1) {
-		if (ioctl(hdl->fd, VSPM_IOC_CMD_WAIT_INTERRUPT, &cb_info)) {
-			ERRPRINT("ioctl(VSPM_IOC_CMD_WAIT_INTERRUPT)\n");
+		if (ioctl(hdl->fd, VSPM_IOC_CMD_WAIT_INTERRUPT, &cb_info))
 			continue;
-		}
 
 		/* check error code */
 		if (cb_info.ercd < 0)
