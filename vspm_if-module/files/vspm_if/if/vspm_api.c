@@ -43,8 +43,9 @@ static int vspm_cb_thread(struct vspm_handle *hdl)
 			break;
 
 		/* execute callback function */
-		(*cb_info.cb_func)(
-			cb_info.job_id, cb_info.result, cb_info.user_data);
+		(*(PFN_VSPM_COMPLETE_CALLBACK)cb_info.cb_func)(
+			cb_info.job_id, cb_info.result,
+			(void *)cb_info.user_data);
 	}
 
 	return 0;

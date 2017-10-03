@@ -11,6 +11,34 @@
 #include "fdp_drv.h"
 #include "vspm_cmn.h"
 
+/* callback function */
+typedef void (*PFN_VSPM_COMPLETE_CALLBACK)(
+	unsigned long job_id, long result, void *user_data);
+
+/* VSP Manager APIs */
+long vspm_init_driver(
+		void **handle,
+		struct vspm_init_t *param);
+
+long vspm_quit_driver(
+		void *handle);
+
+long vspm_entry_job(
+		void *handle,
+		unsigned long *job_id,
+		char job_priority,
+		struct vspm_job_t *ip_param,
+		void *user_data,
+		PFN_VSPM_COMPLETE_CALLBACK cb_func);
+
+long vspm_cancel_job(
+		void *handle,
+		unsigned long job_id);
+
+long vspm_get_status(
+		void *handle,
+		struct vspm_status_t *status);
+
 /* R-Car H2/M2 compatible VSP params */
 #define VSP_NO_DITHER				(0x00)
 #define VSP_DITHER					(0x03)
