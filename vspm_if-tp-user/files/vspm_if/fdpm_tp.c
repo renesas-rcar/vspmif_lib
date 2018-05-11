@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2018 Renesas Electronics Corporation
+ * Released under the MIT license
+ * http://opensource.org/licenses/mit-license.php
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

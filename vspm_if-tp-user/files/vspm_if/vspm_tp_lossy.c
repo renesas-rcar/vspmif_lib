@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2016 Renesas Electronics Corporation
+ * Copyright (c) 2018 Renesas Electronics Corporation
  * Released under the MIT license
  * http://opensource.org/licenses/mit-license.php 
  */
@@ -162,13 +162,13 @@ static int allocate_memory(struct vspm_tp_private_t *priv)
 
 	/* display list */
 	ercd = mmngr_alloc_in_user_ext(
-		&priv->dl_fd, (128+64*4)*8, &priv->dl_hard, &priv->dl_virt, MMNGR_VA_SUPPORT, NULL);
+		&priv->dl_fd, (192+64*4)*8, &priv->dl_hard, &priv->dl_virt, MMNGR_VA_SUPPORT, NULL);
 	if (ercd != R_MM_OK) {
 		printf("Error: failed to allocate memory for DL!! ercd=%d\n", ercd);
 		(void)release_memory(priv);
 		return -1;
 	}
-	memset((void *)priv->dl_virt, 0, (128+64*4)*8);
+	memset((void *)priv->dl_virt, 0, (192+64*4)*8);
 
 	return 0;
 }
@@ -463,9 +463,12 @@ int vsp_image_test(struct vspm_tp_private_t *priv, int lossy)
 	vsp_par.src_par[4]	= NULL;
 	vsp_par.dst_par		= &dst_par;
 	vsp_par.ctrl_par	= &ctrl_par;
+	/* this parameter is necessary for scaling, super resolution and rotation */
+	/*
 	vsp_par.dl_par.hard_addr = priv->dl_hard;
 	vsp_par.dl_par.virt_addr = priv->dl_virt;
 	vsp_par.dl_par.tbl_num	 = 192+64*4;
+	*/
 
 	/* set vspm */
 	memset(&vspm_ip, 0, sizeof(struct vspm_job_t));
@@ -711,9 +714,12 @@ int vsp_blend_test(struct vspm_tp_private_t *priv)
 	vsp_par.use_module	= VSP_BRU_USE;
 	vsp_par.dst_par		= &dst_par;
 	vsp_par.ctrl_par	= &ctrl_par;
+	/* this parameter is necessary for scaling, super resolution and rotation */
+	/*
 	vsp_par.dl_par.hard_addr = priv->dl_hard;
 	vsp_par.dl_par.virt_addr = priv->dl_virt;
 	vsp_par.dl_par.tbl_num	 = 192;
+	*/
 
 	/* set vspm */
 	memset(&vspm_ip, 0, sizeof(struct vspm_job_t));
