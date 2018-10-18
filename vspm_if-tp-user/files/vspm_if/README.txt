@@ -15,7 +15,7 @@ Sample programs for VSP Manager
 
 # monitor
 
-	Please connect a HDMI monitor that supports Full HD or higher resolution.
+	Please connect a HDMI monitor.
 
 
 ## Sample programs

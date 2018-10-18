@@ -280,8 +280,16 @@ static void output_fb(struct vspm_tp_private_t *priv)
 		return;
 	}
 
-	vinfo.xres = 1920;
-	vinfo.yres = 1080;
+	if (vinfo.xres_virtual > 1920)
+		vinfo.xres = 1920;
+	else
+		vinfo.xres = vinfo.xres_virtual;
+
+	if (vinfo.yres_virtual > 1080)
+		vinfo.yres = 1080;
+	else
+		vinfo.yres = vinfo.yres_virtual;
+
 	screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
 
 	fbp = (char*)mmap(0, screensize, PROT_READ|PROT_WRITE, MAP_SHARED, fbfd, 0);
@@ -291,7 +299,20 @@ static void output_fb(struct vspm_tp_private_t *priv)
 		return;
 	}
 
-	memcpy(fbp, (unsigned char*)priv->out_virt, screensize);
+	if (vinfo.xres == 1920 && vinfo.yres == 1080) {
+		memcpy(fbp, (unsigned char*)priv->out_virt, screensize);
+	} else {
+		int i;
+		unsigned char *pto, *pfrom;
+
+		pto = (unsigned char *)fbp;
+		pfrom = (unsigned char *)priv->out_virt;
+		for (i = 0; i < vinfo.yres; i++) {
+			memcpy(pto, pfrom, vinfo.xres * vinfo.bits_per_pixel / 8);
+			pto += (vinfo.xres * vinfo.bits_per_pixel / 8);
+			pfrom += (1920 * 4);
+		}
+	}
 
 	ercd = ioctl(fbfd, FBIOPAN_DISPLAY, &vinfo);
 	if (ercd) {
