@@ -39,6 +39,10 @@ long vspm_get_status(
 		void *handle,
 		struct vspm_status_t *status);
 
+int vspm_mem_alloc(int *pid, size_t size, unsigned int *phard_addr,  void **user_virt_addr);
+
+int vspm_mem_free(int pid);
+
 /* R-Car H2/M2 compatible VSP params */
 #define VSP_NO_DITHER				(0x00)
 #define VSP_DITHER					(0x03)

@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <pthread.h>
+#include <sys/mman.h>
 
 #include "vspm_public.h"
 #include "vspm_if.h"
@@ -297,3 +298,79 @@ long vspm_get_status(void *handle, struct vspm_status_t *status)
 	return rtcd;
 }
 
+/* Allocate memory in user space */
+int vspm_mem_alloc(int *pid, size_t size, unsigned int *phard_addr, void **user_virt_addr)
+{
+	struct vspm_mem alloc;
+	int fd;
+	void *tmp_virt_addr;
+
+	fd = open("/dev/" DEVFILE, O_RDWR);
+	if (fd < 0) {
+		ERRPRINT("fail to open\n");
+		return -1;
+	}
+	/* allocate memory */
+	memset(&alloc, 0, sizeof(alloc));
+	alloc.size = size;
+	if (ioctl(fd, VSPM_IOC_CMD_ALLOC_MEM, &alloc)) {
+		ERRPRINT("fail to ioctl(VSPM_IOC_CMD_ALLOC_MEM)\n");
+		close(fd);
+		return -1;
+	}
+
+	tmp_virt_addr = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if(tmp_virt_addr == MAP_FAILED) {
+		ERRPRINT("fail to mmap\n");
+		close(fd);
+		return -1;
+	}
+
+	alloc.virt_addr = tmp_virt_addr;
+	if (ioctl(fd, VSPM_IOC_CMD_SET, &alloc)) {
+		ERRPRINT("fail to ioctl(VSPM_IOC_CMD_SET)\n");
+		close(fd);
+		return -1;
+	}
+
+	if (ioctl(fd, VSPM_IOC_CMD_GET, &alloc)) {
+		ERRPRINT("fail to ioctl(VSPM_IOC_CMD_GET)\n");
+		close(fd);
+		return -1;
+	}
+
+	*((int *)pid) = fd;
+	*user_virt_addr = tmp_virt_addr;
+	*phard_addr = alloc.phy_addr;
+	
+	return 0;
+}
+
+int vspm_mem_free(int pid)
+{
+	struct vspm_mem p;
+
+	memset(&p, 0, sizeof(p));
+
+	if (ioctl(pid, VSPM_IOC_CMD_GET, &p)) {
+		ERRPRINT("fail to ioctl(VSPM_IOC_CMD_GET)\n");
+		return -1;
+	}
+
+	if (munmap(p.virt_addr, p.size) < 0) {
+		ERRPRINT("fail to munmap\n");
+		return -1;
+	}
+
+	if(ioctl(pid, VSPM_IOC_CMD_FREE_MEM) < 0) {
+		ERRPRINT("fail to ioctl(VSPM_IOC_CMD_FREE_MEM)\n");
+		return -1;
+	}
+
+	if (close(pid) < 0) {
+		ERRPRINT("fail to close\n");
+		return -1;
+	}
+
+	return 0;
+}
