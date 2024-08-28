@@ -11,14 +11,13 @@
 #include <errno.h>
 
 #include "vspm_public.h"
-#include "mmngr_user_public.h"
 
 typedef void (*FDPM_CBFUNC1)(T_FDP_CB1 *);
 typedef void (*FDPM_CBFUNC2)(T_FDP_CB2 *);
 
 struct vspm_if_fdp_handle_t {
 	void *handle;
-	MMNGR_ID stlmsk_fd;
+	int stlmsk_fd;
 	pthread_mutex_t mutex;
 	struct vspm_if_fdp_cb_t *cb_list;
 
@@ -386,15 +385,14 @@ int drv_FDPM_Open(
 
 	/* set parameter */
 	stlmsk_size = 2 * ((open_par->insize->width + 7) / 8) * open_par->insize->height;
-	rtcd = mmngr_alloc_in_user_ext(
-		&hdl->stlmsk_fd, stlmsk_size * 2, &stlmsk_hard, &stlmsk_virt, MMNGR_VA_SUPPORT, NULL);
+	rtcd = vspm_mem_alloc(&hdl->stlmsk_fd, stlmsk_size * 2, &stlmsk_virt);
 	if (rtcd) {
 		free(hdl);
 		return -ENOMEM;
 	}
 
-	fdp_par.hard_addr[0] = stlmsk_hard;
-	fdp_par.hard_addr[1] = stlmsk_hard + stlmsk_size;
+	fdp_par.virt_addr[0] = (unsigned long)stlmsk_virt;
+	fdp_par.virt_addr[1] = fdp_par.virt_addr[0] + stlmsk_size;
 
 	init_par.type = VSPM_TYPE_FDP_AUTO;
 	init_par.par.fdp = &fdp_par;
@@ -424,7 +422,7 @@ int drv_FDPM_Open(
 	return R_FDPM_OK;
 
 err_exit:
-	(void)mmngr_free_in_user_ext(hdl->stlmsk_fd);
+	(void)vspm_mem_free(hdl->stlmsk_fd);
 	free(hdl);
 	return rtcd;
 }
@@ -467,7 +465,7 @@ int drv_FDPM_Close(
 	}
 
 	/* release memory */
-	(void)mmngr_free_in_user_ext(hdl->stlmsk_fd);
+	(void)vspm_mem_free(hdl->stlmsk_fd);
 	free(hdl);
 
 	/* call user function */
