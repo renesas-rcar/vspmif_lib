@@ -10,7 +10,6 @@
 #include <pthread.h>
 
 #include "vspm_public.h"
-#include "mmngr_user_public.h"
 
 struct vspm_if_vsp_handle_t {
 	void *handle;
@@ -35,11 +34,11 @@ struct vspm_if_vsp_par_t {
 		struct vsp_uds_t uds;
 		struct vspm_if_vsp_lut_par_t {
 			struct vsp_lut_t lut;
-			MMNGR_ID fd;
+			int fd;
 		} lut;
 		struct vspm_if_vsp_clu_par_t {
 			struct vsp_clu_t clu;
-			MMNGR_ID fd;
+			int fd;
 		} clu;
 		struct vsp_hst_t hst;
 		struct vsp_hsi_t hsi;
@@ -354,9 +353,8 @@ static void vspm_if_set_vsp_lut_param(
 			tbl_num = 256;
 		}
 
-		ercd = mmngr_alloc_in_user_ext(
-			&par->fd, tbl_num * 8, &hard_addr, &virt_addr, MMNGR_VA_SUPPORT, NULL);
-		if (ercd == R_MM_OK) {
+		ercd = vspm_mem_alloc(&par->fd, tbl_num * 8, &hard_addr, &virt_addr);
+		if (ercd == 0) {
 			vspm_if_expand_vsp_lut_tbl(
 				(unsigned int *)virt_addr,
 				0x00007000,
@@ -393,14 +391,8 @@ static void vspm_if_set_vsp_clu_param(
 		if ((old_clu->clu_addr != NULL) &&
 			(old_clu->clu_data != NULL)) {
 
-			ercd = mmngr_alloc_in_user_ext(
-				&par->fd,
-				tbl_num * 16,
-				&hard_addr,
-				&virt_addr,
-				MMNGR_VA_SUPPORT,
-				NULL);
-			if (ercd == R_MM_OK) {
+			ercd = vspm_mem_alloc(&par->fd, tbl_num * 16, &hard_addr, &virt_addr);
+			if (ercd == 0) {
 				vspm_if_expand_vsp_clu_tbl(
 					(unsigned int *)virt_addr,
 					(unsigned int *)old_clu->clu_addr,
@@ -413,14 +405,8 @@ static void vspm_if_set_vsp_clu_param(
 	} else {
 		/* auto address increment mode */
 		if (old_clu->clu_data != NULL) {
-			ercd = mmngr_alloc_in_user_ext(
-				&par->fd,
-				tbl_num * 8,
-				&hard_addr,
-				&virt_addr,
-				MMNGR_VA_SUPPORT,
-				NULL);
-			if (ercd == R_MM_OK) {
+			ercd = vspm_mem_alloc(&par->fd, tbl_num * 8, &hard_addr, &virt_addr);
+			if (ercd == 0) {
 				vspm_if_expand_vsp_lut_tbl(
 					(unsigned int *)virt_addr,
 					0x00007404,
@@ -743,12 +729,12 @@ static void vspm_if_release_memory(struct vspm_if_vsp_cb_t *cb_info)
 
 	/* LUT */
 	if (ctrl_par->lut.lut.lut.hard_addr != 0) {
-		(void)mmngr_free_in_user_ext(ctrl_par->lut.fd);
+		(void)vspm_mem_free(ctrl_par->lut.fd);
 	}
 
 	/* CLU */
 	if (ctrl_par->clu.clu.clu.hard_addr != 0) {
-		(void)mmngr_free_in_user_ext(ctrl_par->clu.fd);
+		(void)vspm_mem_free(ctrl_par->clu.fd);
 	}
 
 	/* HGO */
