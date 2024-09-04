@@ -17,22 +17,21 @@
 #include <pthread.h>
 
 #include "vspm_public.h"
-#include "mmngr_user_public.h"
 
-#define FB_ENABLE		1	/* 0: disable output framebuffer, 1: enable */
+#define FB_ENABLE		0	/* 0: disable output framebuffer, 1: enable */
 
 struct vspm_tp_private_t {
 	void *in_virt[2];
 	unsigned int in_hard[2];
-	MMNGR_ID in_fd[2];
+	int in_fd[2];
 
 	void *out_virt;
 	unsigned int out_hard;
-	MMNGR_ID out_fd;
+	int out_fd;
 
 	void *dl_virt;
 	unsigned int dl_hard;
-	MMNGR_ID dl_fd;
+	int dl_fd;
 
 	void *handle;
 };
@@ -49,13 +48,13 @@ struct vspm_tp_cb_info_t {
 static int release_memory(struct vspm_tp_private_t *priv)
 {
 	if (priv->dl_fd != 0)
-		(void)mmngr_free_in_user_ext(priv->dl_fd);
+		(void)vspm_mem_free(priv->dl_fd);
 	if (priv->out_fd != 0)
-		(void)mmngr_free_in_user_ext(priv->out_fd);
+		(void)vspm_mem_free(priv->out_fd);
 	if (priv->in_fd[1] != 0)
-		(void)mmngr_free_in_user_ext(priv->in_fd[1]);
+		(void)vspm_mem_free(priv->in_fd[1]);
 	if (priv->in_fd[0] != 0)
-		(void)mmngr_free_in_user_ext(priv->in_fd[0]);
+		(void)vspm_mem_free(priv->in_fd[0]);
 
 	return 0;
 }
@@ -63,30 +62,29 @@ static int release_memory(struct vspm_tp_private_t *priv)
 /* allocate memory from memory manager */
 static int allocate_memory(struct vspm_tp_private_t *priv)
 {
-	struct MM_FUNC mem;
 	unsigned int conf;
 	int ercd;
 
 	/* input buffer (ARGB8888) */
-	ercd = mmngr_alloc_in_user_ext(
-		&priv->in_fd[0], 960*960*4, &priv->in_hard[0], &priv->in_virt[0], MMNGR_VA_SUPPORT, NULL);
-	if (ercd != R_MM_OK) {
+	ercd = vspm_mem_alloc(
+		&priv->in_fd[0], 960*960*4, &priv->in_hard[0], &priv->in_virt[0]);
+	if (ercd != 0) {
 		printf("Error: failed to allocate memory for input!! ercd=%d\n", ercd);
 		return -1;
 	}
 
 	/* input buffer (ARGB8888) */
-	ercd = mmngr_alloc_in_user_ext(
-		&priv->in_fd[1], 960*960*4, &priv->in_hard[1], &priv->in_virt[1], MMNGR_VA_SUPPORT, NULL);
-	if (ercd != R_MM_OK) {
+	ercd = vspm_mem_alloc(
+		&priv->in_fd[1], 960*960*4, &priv->in_hard[1], &priv->in_virt[1]);
+	if (ercd != 0) {
 		printf("Error: failed to allocate memory for input!! ercd=%d\n", ercd);
 		return -1;
 	}
 
 	/* output buffer (ARGB8888) */
-	ercd = mmngr_alloc_in_user_ext(
-		&priv->out_fd, 1920*1080*4, &priv->out_hard, &priv->out_virt, MMNGR_VA_SUPPORT, NULL);
-	if (ercd != R_MM_OK) {
+	ercd = vspm_mem_alloc(
+		&priv->out_fd, 1920*1080*4, &priv->out_hard, &priv->out_virt);
+	if (ercd != 0) {
 		printf("Error: failed to allocate memory for output!! ercd=%d\n", ercd);
 		(void)release_memory(priv);
 		return -1;
@@ -94,9 +92,9 @@ static int allocate_memory(struct vspm_tp_private_t *priv)
 	memset(priv->out_virt, 0, 1920*1080*4);
 
 	/* display list */
-	ercd = mmngr_alloc_in_user_ext(
-		&priv->dl_fd, (192+64*4)*8, &priv->dl_hard, &priv->dl_virt, MMNGR_VA_SUPPORT, NULL);
-	if (ercd != R_MM_OK) {
+	ercd = vspm_mem_alloc(
+		&priv->dl_fd, (192+64*4)*8, &priv->dl_hard, &priv->dl_virt);
+	if (ercd != 0) {
 		printf("Error: failed to allocate memory for DL!! ercd=%d\n", ercd);
 		(void)release_memory(priv);
 		return -1;
