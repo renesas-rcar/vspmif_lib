@@ -18,7 +18,7 @@
 
 #include "vspm_public.h"
 
-#define FB_ENABLE		0	/* 0: disable output framebuffer, 1: enable */
+#define FB_ENABLE		1	/* 0: disable output framebuffer, 1: enable */
 
 int src_width	= 1280;
 int src_height	= 720;

@@ -18,7 +18,7 @@
 
 #include "vspm_public.h"
 
-#define FB_ENABLE		0	/* 0: disable output framebuffer, 1: enable */
+#define FB_ENABLE		1	/* 0: disable output framebuffer, 1: enable */
 
 struct vspm_tp_private_t {
 	void *in_virt[2];
