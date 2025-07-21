@@ -163,6 +163,70 @@ static void create_source_image(struct vspm_tp_private_t *priv)
 	}
 }
 
+/* save output to BMP image file */
+static void save_to_bmp(struct vspm_tp_private_t *priv, const char *filename)
+{
+	FILE *fp;
+	unsigned int width = dst_width;   /* 1920 */
+	unsigned int height = dst_height; /* 1080 */
+	unsigned int *pixel_data = (unsigned int *)priv->out_virt;
+	unsigned int i, j;
+	
+	/* BMP file header */
+	unsigned char bmp_header[54] = {
+		0x42, 0x4D,             /* "BM" */
+		0, 0, 0, 0,             /* File size (filled later) */
+		0, 0, 0, 0,             /* Reserved */
+		54, 0, 0, 0,            /* Offset to pixel data */
+		40, 0, 0, 0,            /* Header size */
+		0, 0, 0, 0,             /* Width (filled later) */
+		0, 0, 0, 0,             /* Height (filled later) */
+		1, 0,                   /* Planes */
+		24, 0,                  /* Bits per pixel */
+		0, 0, 0, 0,             /* Compression */
+		0, 0, 0, 0,             /* Image size (filled later) */
+		0x13, 0x0B, 0, 0,       /* X pixels per meter */
+		0x13, 0x0B, 0, 0,       /* Y pixels per meter */
+		0, 0, 0, 0,             /* Colors used */
+		0, 0, 0, 0              /* Important colors */
+	};
+	
+	unsigned int file_size = 54 + (width * height * 3);
+	unsigned int image_size = width * height * 3;
+
+	fp = fopen(filename, "wb");
+	if (fp == NULL) {
+		printf("Error: failed to open file %s for writing\n", filename);
+		return;
+	}
+
+	/* Fill in the header values */
+	*(unsigned int*)(bmp_header + 2) = file_size;
+	*(unsigned int*)(bmp_header + 18) = width;
+	*(unsigned int*)(bmp_header + 22) = height;
+	*(unsigned int*)(bmp_header + 34) = image_size;
+	
+	/* Write BMP header */
+	fwrite(bmp_header, 1, 54, fp);
+
+	/* Write pixel data (BMP stores bottom-to-top, BGR format) */
+	for (i = 0; i < height; i++) {
+		for (j = 0; j < width; j++) {
+			unsigned int pixel = pixel_data[(height - 1 - i) * width + j];
+			unsigned char b = pixel & 0xFF;
+			unsigned char g = (pixel >> 8) & 0xFF;
+			unsigned char r = (pixel >> 16) & 0xFF;
+			
+			fwrite(&b, 1, 1, fp);
+			fwrite(&g, 1, 1, fp);
+			fwrite(&r, 1, 1, fp);
+		}
+	}
+
+	fclose(fp);
+	printf("Image saved to %s\n", filename);
+}
+
 /* output framebuffer */
 static void output_fb(struct vspm_tp_private_t *priv)
 {
@@ -460,6 +524,8 @@ int main(int argc, char *argv[])
 #if (FB_ENABLE == 1)
 	output_fb(priv);
 	sleep(3);
+#else
+	save_to_bmp(priv, "before_scaling.bmp");
 #endif
 
 	gettimeofday(&pre_time, NULL);
@@ -483,6 +549,8 @@ int main(int argc, char *argv[])
 
 #if (FB_ENABLE == 1)
 	output_fb(priv);
+#else
+	save_to_bmp(priv, "after_scaling.bmp");
 #endif
 
 	/* release memory */
